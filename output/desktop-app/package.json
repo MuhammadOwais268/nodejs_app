@@ -1,0 +1,29 @@
+{
+  "name": "business-email-desktop",
+  "version": "0.1.0",
+  "description": "Desktop wrapper for the business-email-js orchestrator (Electron)",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder --win"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-builder": "^24.6.0"
+  },
+  "build": {
+    "appId": "com.example.business-email",
+    "productName": "Business Email Desktop",
+    "files": [
+      "**/*",
+      "!node_modules/**/*"
+    ],
+    "win": {
+      "target": ["nsis","portable"]
+    }
+  }
+}

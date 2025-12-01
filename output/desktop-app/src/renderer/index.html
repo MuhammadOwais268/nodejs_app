@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Business Email Desktop</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 20px; }
+      button { margin: 6px; padding: 8px 12px; }
+      #logs { white-space: pre-wrap; background:#111; color:#8f8; padding:10px; height:200px; overflow:auto }
+      #status { margin-top:6px }
+      .col { display:inline-block; vertical-align:top; width:48%; }
+    </style>
+  </head>
+  <body>
+    <h2>Business Email — Desktop</h2>
+    <div>
+      <button id="btn-start">Start Orchestrator</button>
+      <button id="btn-stop">Stop Orchestrator</button>
+      <button id="btn-docker">Docker Up</button>
+      <span id="status">Orchestrator: <strong id="orch-state">stopped</strong></span>
+    </div>
+
+    <div style="margin-top:12px">
+      <div class="col">
+        <h3>Scrape</h3>
+        <input id="searchQuery" placeholder="search query" value="restaurants in Jhelum" style="width:90%" />
+        <div><button id="btn-scrape">Run Scrape</button></div>
+        <pre id="scrape-out"></pre>
+      </div>
+      <div class="col" style="margin-left:2%">
+        <h3>Preview / Send</h3>
+        <input id="subject" placeholder="Subject template" value="Hello [NAME] - Partnership Opportunity" style="width:100%" />
+        <textarea id="body" style="width:100%;height:120px">Hi [NAME],\n\nWe noticed [NAME] in Jhelum and would love to discuss a partnership.\n\nBest,\nOutreach Team</textarea>
+        <div>
+          <button id="btn-preview">Generate Preview</button>
+          <button id="btn-send-test">Send to Test Recipient</button>
+        </div>
+        <pre id="preview-out"></pre>
+      </div>
+    </div>
+
+    <h3>Logs</h3>
+    <div id="logs">(logs will appear here)</div>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

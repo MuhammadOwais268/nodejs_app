@@ -1,0 +1,14 @@
+/.env
+**/.env
+/home/owais/credentials/
+*.log
+node_modules/
+.DS_Store
+
+# ignore generated OAuth client/token files in output folders
+output/**/google_*.json
+
+# ignore embedded repos and backups
+frontend/pixel-perfect-ui/
+outreach-pilot/
+outreach-pilot.bak_1764569089/

@@ -1,0 +1,250 @@
+{
+  "name": "Email_Sending",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Your a data retrieving agent you have to follow the following instructions to execute the command according to the action \n\n    1. When the user provides you the subjects and the bodys along with email address you will send them using **Send mail** tool at the provided emails {{ $json.body.recipient_email }},{{ $json.body.subject }},{{ $json.body.body }}.\n    2. You will also save these data in the **Update database**   tool {{ $json.body.email_id }},{{ $json.body.recipient_email }},{{ $json.body.subject }},{{ $json.body.body }}.",
+        "options": {
+          "systemMessage": "="
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "8110e77e-7ea1-4d89-9462-7f0bf05af52a",
+      "name": "Task management agent"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email_management",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2a7cf81b-60e3-46a4-91c6-29c0b159f8a2",
+      "name": "Webhook",
+      "webhookId": "8c443ea4-dc95-4ea7-891e-3679f61f0ffc"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        560,
+        0
+      ],
+      "id": "397ac778-abe8-4df9-8a9e-d8804bbaff9c",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        288
+      ],
+      "id": "cf25cb3c-46e2-4195-8f65-e8dcace92f4c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XcK4rALTRuginp5T",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        464,
+        288
+      ],
+      "id": "9035fe6f-a053-401e-bf32-f7af0631e1b4",
+      "name": "Send mail",
+      "webhookId": "12bc59cb-82f9-4195-b909-3dcde9a36bc3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1gOCNDZM8ntDcC6b",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1TNLkYNjoKcncovA4EXiHA9Iuwz-0bjPUa4M0Hb2A3OQ/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1TNLkYNjoKcncovA4EXiHA9Iuwz-0bjPUa4M0Hb2A3OQ/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('email_id', ``, 'string') }}",
+            "recipient_email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('recipient_email', ``, 'string') }}",
+            "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('subject', ``, 'string') }}",
+            "body": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('body', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "email_id"
+          ],
+          "schema": [
+            {
+              "id": "email_id",
+              "displayName": "email_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "recipient_email",
+              "displayName": "recipient_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        288
+      ],
+      "id": "f334351e-750d-4d60-b9b6-4f4507a8aee6",
+      "name": "Update database1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9HpwtAzVNsfghodJ",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Task management agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Task management agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Task management agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send mail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Task management agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update database1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Task management agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a8ed018e-6f4e-459d-a0bd-7c25ccad77b3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f794113dfa6dc4dcbe60d7859bba6df91c376092474712c7e25a7269e4bb8113"
+  },
+  "id": "QG8ENAqUsS72kWIg",
+  "tags": []
+}

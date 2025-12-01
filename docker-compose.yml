@@ -1,0 +1,96 @@
+version: '3.8'
+services:
+  scraper:
+    build:
+      context: ./output/scraper-app
+      dockerfile: Dockerfile
+    ports:
+      - "3101:3001"
+    env_file:
+      - ./output/scraper-app/.env
+    environment:
+      - PORT=3001
+      # SERPAPI_KEY is provided via env_file (do not override with host expansion)
+    restart: unless-stopped
+
+  task-management:
+    build:
+      context: ./output/task-management-app
+      dockerfile: Dockerfile
+    ports:
+      - "3104:3004"
+    environment:
+      - PORT=3004
+      - GOOGLE_SHEETS_CREDENTIALS=/data/google_oauth_client.json
+      - GOOGLE_SHEETS_TOKEN=/data/google_token.json
+      - GOOGLE_SHEETS_SPREADSHEET_ID=${SPREADSHEET_TASK_ID}
+    volumes:
+      - ./output/email-sending-app:/data:ro
+    restart: unless-stopped
+
+  email-writing:
+    build:
+      context: ./output/email-writing-app
+      dockerfile: Dockerfile
+    ports:
+      - "3103:3003"
+    env_file:
+      - ./output/email-writing-app/.env
+    environment:
+      - PORT=3003
+      - GOOGLE_SHEETS_CREDENTIALS=/data/google_oauth_client.json
+      - GOOGLE_SHEETS_TOKEN=/data/google_token.json
+      - GOOGLE_SHEETS_SPREADSHEET_ID=${SPREADSHEET_EMAIL_ID}
+    volumes:
+      - ./credentials:/data:ro
+    restart: unless-stopped
+
+  email-sending:
+    build:
+      context: ./output/email-sending-app
+      dockerfile: Dockerfile
+    ports:
+      - "3102:3002"
+    environment:
+      - PORT=3002
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASS=
+      - GOOGLE_SHEETS_CREDENTIALS=/usr/src/app/google_oauth_client.json
+      - GOOGLE_SHEETS_TOKEN=/usr/src/app/google_token.json
+    # You can also supply an env file with these values for convenience
+    env_file:
+      - ./output/email-sending-app/.env
+    volumes:
+      # Mount the app output into the container so credentials written by the orchestrator
+      # are visible at /usr/src/app inside the container.
+      - ./output/email-sending-app:/usr/src/app
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend/pixel-perfect-ui
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+  orchestrator:
+    image: node:20
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace:cached
+    command: ["node", "output/orchestrator/server.js"]
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - ORCH_SECRET=dev_orch_secret
+    ports:
+      - "4010:4010"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8025:8025"   # MailHog web UI
+      - "1025:1025"   # SMTP listener
+    restart: unless-stopped

@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Loveable Frontend</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="container">
+      <h1>Loveable — Outreach Control</h1>
+      <div>
+        <label>Search query</label>
+        <input id="query" value="restaurants in Jhelum" />
+        <button id="scrape">Scrape</button>
+        <button id="append">Append to Sheet</button>
+        <button id="preview">Generate Previews</button>
+        <div style="display:inline-block;margin-left:8px">
+          <label><input type="radio" name="sendMode" value="test" checked> Send to test recipient</label>
+          <label style="margin-left:8px"><input type="radio" name="sendMode" value="real"> Send to real addresses</label>
+        </div>
+        <button id="sendtest">Send (respect mode)</button>
+      </div>
+      <pre id="out"></pre>
+
+      <!-- Confirmation modal (hidden) -->
+      <div id="confirm-modal" style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+        <div style="background:#fff;padding:18px;border-radius:8px;max-width:520px;margin:50px auto;">
+          <h3>Confirm sending to real addresses</h3>
+          <p>This will send emails to the actual addresses found in the sheet or scraped data. Please confirm you have permission to contact these recipients.</p>
+          <label><input type="checkbox" id="confirm-checkbox"> I confirm I have permission to email these addresses</label>
+          <div style="margin-top:12px">
+            <button id="confirm-send-btn">Confirm and Send</button>
+            <button id="confirm-cancel-btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,196 @@
+{
+  "name": "Email_Writing",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "=## EMAIL TEMPLATE 1\n\nSubject: Important Update for [NAME]\n\nDear [NAME],\n\nThis is to inform you about our latest product update. We value your partnership and wanted to reach out personally.\n\nBest regards,\nThe Team\n\n---\n\n## EMAIL TEMPLATE 2\n\nSubject: Special Offer for [NAME]\n\nHi [NAME],\n\nWe have an exclusive offer just for you. As a valued customer, we wanted to share this opportunity.\n\nThank you,\nSales Team"
+      },
+      "id": "7e6cd2ac-9ed5-4da7-ab13-bfa001fb9de5",
+      "name": "Dummy Email Templates",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are Data retrieving and email writting agent and you have to follow the instructions\n\n    1.     Get all the data rows and columns from **Get data** tool\n    2.     Get subject{{ $json.body.subject }} and body{{ $json.body.body }} from the user input\n    3.     Get response from **Get data** which must contain \n    4.     You will be provided a dummy email, you have to analyze its body {{ $json.body.body }} and subject {{ $json.body.subject }}, and you will recreate it for a specific recipient, email is from **Get data** ID\tSerial\tTimestamp\tName\tType\tLocation\tPhone\tEmails\tWebsites\tRatings.\n    5. Now you will generate personalized emails for the provided data from **Get data** ,you will only change or add recipient details ,you will try not to change subject and body \n    6. You will generate unique email_id for every email you generate \n    7. You will generate personalized email for every data that have email.\n    8. It should output data in this structured formate \n{\n    9.   \"email_id\": \"1\",\n    10.   \"recipient\": \"gifts@le-bernardin.com\",\n    11.   \"subject\": \"Project Update: Progress Report for AI System\",\n    12.   \"body\": \"Hello Le Bernardin Team,\\n\\nThis is to inform you that our AI system project is progressing as planned...\"\n    13. }\n    14. {\n    15.   \"email_id\": \"2\",\n    16.   \"recipient\": \"office@le-bernardin.com\",\n    17.   \"subject\": \"Project Update: Progress Report for AI System\",\n    18.   \"body\": \"Hello Le Bernardin Team,\\n\\nThis is to inform you that our AI system project is progressing as planned...\"\n    19. }\n    20. {\n    21.   \"email_id\": \"3\",\n    22.   \"recipient\": \"kburroughs@le-bernardin.com\",\n    23.   \"subject\": \"Project Update: Progress Report for AI System\",\n    24.   \"body\": \"Hello kburroughs,\\n\\nThis is to inform you that our AI system project is progressing as planned...\"\n    25. }\n    26. {\n    27.   \"email_id\": \"4\",\n    28.   \"recipient\": \"ralbert@le-bernardin.com\",\n    29.   \"subject\": \"Project Update: Progress Report for AI System\",\n    30.   \"body\": \"Hello ralbert,\\n\\nThis is to inform you that our AI system project is progressing as planned...\"\n    31. }",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        16
+      ],
+      "id": "5495f0e3-1429-4a91-88a3-732db795bdd1",
+      "name": "AI Agent",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        64,
+        272
+      ],
+      "id": "e3c6d0b1-01e8-47bd-b85e-0f24d1cfdc94",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XcK4rALTRuginp5T",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1B81Er5VmYJjDDjMxnOgajqEF__-fG2OnH33Q5t_MeFY/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1B81Er5VmYJjDDjMxnOgajqEF__-fG2OnH33Q5t_MeFY/edit?gid=0#gid=0",
+          "__regex": "https:\\/\\/docs\\.google\\.com\\/spreadsheets\\/d\\/[0-9a-zA-Z\\-_]+.*\\#gid=([0-9]+)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        432,
+        240
+      ],
+      "id": "7c050ba0-819a-4416-8a12-91d4489df052",
+      "name": "Get data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "9HpwtAzVNsfghodJ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email_writting",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        16
+      ],
+      "id": "815175c9-e98f-417c-8a9f-ec65809e3c63",
+      "name": "Webhook",
+      "webhookId": "235c96cc-0698-4629-add5-43291c598fa7"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        848,
+        16
+      ],
+      "id": "544439b7-c75f-4459-a7db-9a61eaa78b12",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input text from previous node\nconst input = items[0].json.output || '';\nconst results = [];\n\n/**\n * Try 1: If it contains a single JSON array like [ {...}, {...} ]\n */\ntry {\n  // Find the array part safely\n  const arrayMatch = input.match(/\\[\\s*{[\\s\\S]*}\\s*\\]/);\n  if (arrayMatch) {\n    const parsed = JSON.parse(arrayMatch[0]);\n    if (Array.isArray(parsed)) {\n      return parsed.map(obj => ({ json: obj }));\n    }\n  }\n} catch (err) {\n  console.warn('Array parse failed, will try next method:', err.message);\n}\n\n/**\n * Try 2: Extract multiple ```json ... ``` blocks (unlimited)\n */\ntry {\n  const regex = /```json([\\s\\S]*?)```/g;\n  let match;\n  while ((match = regex.exec(input)) !== null) {\n    const jsonText = match[1].trim();\n    const parsed = JSON.parse(jsonText);\n    if (Array.isArray(parsed)) {\n      parsed.forEach(obj => results.push({ json: obj }));\n    } else {\n      results.push({ json: parsed });\n    }\n  }\n  if (results.length > 0) return results;\n} catch (err) {\n  console.warn('Block parse failed:', err.message);\n}\n\n/**\n * Try 3: Direct JSON (if wrapped in backticks or plain text)\n */\ntry {\n  const clean = input.replace(/```json|```/g, '').trim();\n  const parsed = JSON.parse(clean);\n  if (Array.isArray(parsed)) {\n    return parsed.map(obj => ({ json: obj }));\n  } else if (typeof parsed === 'object') {\n    return [{ json: parsed }];\n  }\n} catch (err) {\n  console.warn('Direct JSON parse failed:', err.message);\n}\n\nthrow new Error('❌ No valid JSON data found in input');\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        16
+      ],
+      "id": "2bbe649e-6df0-4e9c-86ff-4afe8bafc612",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get data": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2088ac83-07b9-49ba-9489-3501990d4951",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f794113dfa6dc4dcbe60d7859bba6df91c376092474712c7e25a7269e4bb8113"
+  },
+  "id": "YPogZQ7kHVMN2H1n",
+  "tags": []
+}
