@@ -1,0 +1,7 @@
+[submodule "frontend/pixel-perfect-ui"]
+path = frontend/pixel-perfect-ui
+url = https://github.com/MuhammadOwais268/pixel-perfect-ui.git
+
+[submodule "outreach-pilot.bak_1764569089"]
+path = outreach-pilot.bak_1764569089
+url = https://github.com/MuhammadOwais268/outreach-pilot.git

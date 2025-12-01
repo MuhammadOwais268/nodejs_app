@@ -12,3 +12,9 @@ output/**/google_*.json
 frontend/pixel-perfect-ui/
 outreach-pilot/
 outreach-pilot.bak_1764569089/
+
+# ignore local nested outreach-pilot
+outreach-pilot/
+
+# ignore local nested outreach-pilot
+outreach-pilot/
