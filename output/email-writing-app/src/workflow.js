@@ -139,12 +139,16 @@ ${JSON.stringify(row, null, 2)}
 
 Return ONLY the JSON object now (no backticks, no explanation).`;
 
-  // Normalize provider selection. Supported providers: 'ollama' (local) and 'openai'.
+  // Normalize provider selection. Supported providers: 'ollama' (local), 'openai', and 'gemini' (Google Generative API).
   const rawProvider = (process.env.LLM_PROVIDER || 'ollama').toLowerCase();
-  const provider = rawProvider === 'openai' ? 'openai' : 'ollama';
+  let provider = 'ollama';
+  if (rawProvider === 'openai') provider = 'openai';
+  else if (rawProvider.includes('gemini') || rawProvider.includes('google')) provider = 'gemini';
+  else provider = 'ollama';
   const llmUrl = process.env.LLM_URL || (provider === 'ollama' ? 'http://localhost:11434/api/generate' : null);
-  // Default model selection: allow provider-specific env overrides
-  const model = process.env.LLM_MODEL || 'llama2';
+  // Default model selection: allow provider-specific env overrides.
+  // Do NOT force a llama2 default; let provider adapters choose safe defaults.
+  const model = process.env.LLM_MODEL || null;
 
   // We'll implement an internal fallback chain: try the configured provider first,
   // then try OpenAI (if configured). If all fail, fall back to deterministic templating.
@@ -153,6 +157,13 @@ Return ONLY the JSON object now (no backticks, no explanation).`;
       if (!llmUrl) throw new Error('OLLAMA URL not configured (LLM_URL)');
       const resp = await axios.post(llmUrl, { model, prompt }, { timeout: 30000 });
       return resp && resp.data ? resp.data : null;
+    }
+    if (p === 'gemini') {
+      const { callGemini } = require('./llm/gemini');
+      const apiKey = process.env.LLM_GEMINI_API_KEY;
+      if (!apiKey) throw new Error('Gemini API key not set (LLM_GEMINI_API_KEY)');
+      const text = await callGemini(prompt, model, apiKey, 30000);
+      return text;
     }
     if (p === 'openai') {
       const { callOpenAI } = require('./llm/openai');
@@ -173,12 +184,13 @@ Return ONLY the JSON object now (no backticks, no explanation).`;
   const tried = [];
   let lastErr = null;
   const primary = provider;
-  const secondary = (provider !== 'openai' && process.env.LLM_OPENAI_API_KEY) ? 'openai' : null;
 
-  // Build attempt sequence: try primary, then OpenAI if available.
+  // Build attempt sequence dynamically: try primary, then OpenAI if available and not already tried,
+  // then Gemini (Google) if available and not already tried.
   const sequence = [];
   if (primary) sequence.push(primary);
-  if (secondary && !sequence.includes('openai')) sequence.push(secondary);
+  if (process.env.LLM_OPENAI_API_KEY && !sequence.includes('openai')) sequence.push('openai');
+  if (process.env.LLM_GEMINI_API_KEY && !sequence.includes('gemini')) sequence.push('gemini');
 
   for (const p of sequence) {
     try {
@@ -202,12 +214,24 @@ Return ONLY the JSON object now (no backticks, no explanation).`;
       try {
         parsed = JSON.parse(text);
       } catch (e) {
-        const subjMatch = text.match(/"?subject"?\s*[:\-]\s*"?([^\n\"]+)"?/i);
-        const bodyMatch = text.match(/"?body"?\s*[:\-]\s*"?([\s\S]+)"?/i);
-        parsed = {
-          subject: subjMatch ? subjMatch[1].trim() : undefined,
-          body: bodyMatch ? bodyMatch[1].trim() : text.trim()
-        };
+        // Try to extract a JSON object embedded in the model output (common when model wraps JSON in backticks or commentary)
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsed = JSON.parse(jsonMatch[0]);
+          } catch (e2) {
+            // fall through to loose parsing below
+            parsed = null;
+          }
+        }
+        if (!parsed) {
+          const subjMatch = text.match(/"?subject"?\s*[:\-]\s*"?([^\n\"]+)"?/i);
+          const bodyMatch = text.match(/"?body"?\s*[:\-]\s*"?([\s\S]+)"?/i);
+          parsed = {
+            subject: subjMatch ? subjMatch[1].trim() : undefined,
+            body: bodyMatch ? bodyMatch[1].trim() : text.trim()
+          };
+        }
       }
       return { subject: parsed.subject || '', body: parsed.body || '', provider: p };
     } catch (err) {

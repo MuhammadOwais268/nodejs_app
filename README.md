@@ -114,6 +114,23 @@ email-writing-app specific:
 - `GOOGLE_SHEETS_RANGE` — sheet range (default `Sheet1`)
 - `DATA_CSV` — local fallback CSV file path (default `data.csv` in the app folder)
 
+LLM / Writer (new additions)
+
+- `USE_LLM` — set to `true` to enable LLM-based personalized previews (defaults present in `output/email-writing-app/.env`).
+- `LLM_PROVIDER` — one of `openai`, `gemini`, or `ollama`. The writer will try the configured provider then fall back to other configured providers before using deterministic templates.
+- `LLM_OPENAI_API_KEY` — OpenAI API key (kept out of `.env` by orchestrator; stored in `output/orchestrator/secrets.json`).
+- `LLM_GEMINI_API_KEY` — Google API key for Generative API (kept in orchestrator secrets). If you have access to Gemini models, use this key.
+- `LLM_GEMINI_URL` — (optional) override URL for Gemini endpoints. Recent default points to `gemini-2.0-flash` generateContent endpoint which is known to work for many keys:
+  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`
+
+Notes:
+- The code contains provider adapters under `output/email-writing-app/src/llm/`:
+  - `openai.js` — OpenAI adapter (defaults to `gpt-3.5-turbo` for safety)
+  - `gemini.js` — Google Generative adapter (uses the flash `generateContent` shape and `X-goog-api-key` header)
+  - `ollama` support is available via `LLM_URL` if you host a local LLM.
+
+If an LLM provider is unavailable (quota, 404, or auth), the writer falls back to deterministic templating so previews and the UI remain usable.
+
 scraper-app specific:
 
 - `SERPAPI_KEY` — SerpAPI key if you want remote scraping
@@ -288,6 +305,21 @@ If Gmail sends fail, check the token validity and re-run `get_token.js`.
 - Replace CSV fallbacks with a local DB (SQLite) for reliability.
 - Add metrics and health/readiness endpoints for orchestration (k8s/systemd).
 
+## Orchestrator LLM test endpoint and Settings UI
+
+To make it easy to validate LLM API keys (Google Gemini or OpenAI) without restarting containers or editing `.env` files, the orchestrator now exposes a small test endpoint and the frontend Settings UI includes a "Test LLM Key" button.
+
+- Orchestrator API: POST `/api/test-llm`
+  - Body: `{ provider: 'gemini'|'openai', apiKey: '<key>', testPrompt?: '<prompt>', url?: '<override>' }`
+  - Returns: `{ ok: boolean, status: number, body: '<raw provider response>' }` — the orchestrator proxies a short provider request and returns the raw response for inspection.
+  - Requires header `x-orch-secret` when `ORCH_SECRET` is set (local default in docker-compose is `dev_orch_secret`).
+
+- Frontend Settings: open `Settings` and use the **Test LLM Key** button in the Keys & IDs section.
+  - The UI sends the provider and key to `/api/test-llm` and displays the raw provider JSON for quick validation.
+  - To have the Settings UI changes appear in the running container, rebuild the frontend image (instructions below).
+
+This workflow makes it fast to troubleshoot key permission issues (404 responses from Google usually mean Generative API is not enabled or the key is restricted). The orchestrator will also persist provider secrets into `output/orchestrator/secrets.json` when you save settings.
+
 ## Useful files
 
 - `output/email-sending-app/src/google/get_token.js` — interactive OAuth helper
@@ -306,5 +338,14 @@ If you want, I can:
 Tell me which of the next steps you'd like me to implement and I will continue.
 
 ---
-Generated: December 01, 2025
+# Changes in this branch (high level)
+
+- Added Gemini flash adapter and LLM fallback chain in `output/email-writing-app/src/`.
+- Added robust Gemini adapter `gemini.js` which calls `gemini-2.0-flash:generateContent` and extracts text from `candidates[].content.parts[].text`.
+- Improved `workflow.js` JSON-extraction robustness to handle model outputs with wrapped JSON.
+- Orchestrator now exposes a small test endpoint `/api/test-llm` to validate LLM keys.
+- Frontend Settings UI now includes a "Test LLM Key" button that calls the orchestrator test endpoint.
+- Orchestrator persists sensitive keys to `output/orchestrator/secrets.json` and writes non-sensitive settings into per-app `.env` files.
+
+Generated: December 03, 2025
 # nodejs_app

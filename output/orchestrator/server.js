@@ -214,6 +214,7 @@ function restartAppByName(appName) {
 }
 
 const apiServer = http.createServer(async (req, res) => {
+  try { console.log('[orch] incoming', req.method, req.url); } catch (e) {}
   // Google OAuth flow endpoints
   if (req.method === 'GET' && req.url && req.url.startsWith('/google/oauth/start')) {
     try {
@@ -319,6 +320,67 @@ const apiServer = http.createServer(async (req, res) => {
   }
 
   // End Google OAuth endpoints
+  // Handle CORS preflight for UI calls
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type,x-orch-secret'
+    });
+    res.end();
+    return;
+  }
+
+  // Lightweight LLM key test endpoint for the Settings UI
+  if (req.method === 'POST' && req.url === '/api/test-llm') {
+    // Allow public local use; if ORCH_SECRET set, require it
+    const expected = process.env.ORCH_SECRET || '';
+    if (expected) {
+      const provided = req.headers['x-orch-secret'] || '';
+      if (provided !== expected) {
+        res.writeHead(401, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ error: 'unauthorized' }));
+        return;
+      }
+    }
+
+    try {
+      let body = '';
+      for await (const chunk of req) body += chunk;
+      const payload = JSON.parse(body || '{}');
+      const provider = (payload.provider || 'gemini').toLowerCase();
+      const apiKey = payload.apiKey || '';
+      const urlOverride = payload.url || null;
+
+      if (provider === 'gemini') {
+        const target = urlOverride || process.env.LLM_GEMINI_URL || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+        const fetchBody = JSON.stringify({ contents: [{ parts: [{ text: payload.testPrompt || 'Say hello' }] }] });
+        const resp = await fetch(target, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(apiKey ? { 'X-goog-api-key': apiKey } : {}) }, body: fetchBody });
+        const text = await resp.text();
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ ok: resp.ok, status: resp.status, body: text }));
+        return;
+      }
+
+      if (provider === 'openai') {
+        const target = urlOverride || 'https://api.openai.com/v1/models';
+        const resp = await fetch(target, { method: 'GET', headers: { 'Authorization': `Bearer ${apiKey}` } });
+        let bodyText = '';
+        try { bodyText = await resp.text(); } catch (e) { bodyText = String(e); }
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ ok: resp.ok, status: resp.status, body: bodyText }));
+        return;
+      }
+
+      res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ error: 'unsupported_provider' }));
+      return;
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify({ error: String(err) }));
+    }
+    return;
+  }
 
   if (req.method === 'POST' && req.url === '/update-settings') {
     // Basic secret check to avoid accidental external use. Set ORCH_SECRET in the
